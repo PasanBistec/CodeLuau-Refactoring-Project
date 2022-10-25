@@ -23,55 +23,32 @@ namespace CodeLuau
 		public RegisterResponse Register(IRepository repository)
 		{
 
-			int? speakerId = null;
-
-			var error = ValidateData();
+			
+			var error = ValidateRegistration();
 			if (error != null) return new RegisterResponse(error);
-
-			//put list of employers in array
-			bool speakerAppearsQulified = AppearsExeptional() || !HasObiousRedFlags();
-
-			if (!speakerAppearsQulified)
-			{
-				return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
-			}
-
- 			bool atLeastOneSessionApproved = approveSessions();
-
-			if (atLeastOneSessionApproved)
-			{
-				//if we got this far, the speaker is approved.
-				//let's go ahead and register him/her now.
-				//First, let's calculate the registration fee. 
-				//More experienced speakers pay a lower fee.  
-				 
-
-
-				//Now, save the speaker and sessions to the db.
-				try
-				{
-					speakerId = repository.SaveSpeaker(this);
-				}
-				catch (Exception e)
-				{
-					//in case the db call fails 
-				}
-			}
-			else
-			{
-				return new RegisterResponse(RegisterError.NoSessionsApproved);
-			}
-
-
-
-
-
-			//if we got this far, the speaker is registered.
+            int? speakerId = repository.SaveSpeaker(this);
 			return new RegisterResponse((int)speakerId);
 
 		}
+		  
+		private RegisterError? ValidateRegistration()
+		{
+            var error = ValidateData();
+            if (error != null) return error;
 
-		private bool approveSessions()
+            //put list of employers in array
+            bool speakerAppearsQulified = AppearsExeptional() || !HasObiousRedFlags();
+
+            if (!speakerAppearsQulified)
+            {
+                return  RegisterError.SpeakerDoesNotMeetStandards;
+            }
+            bool atLeastOneSessionApproved = approveSessions();
+			if(!atLeastOneSessionApproved) return RegisterError.NoSessionsApproved;
+			return null;
+        }
+
+        private bool approveSessions()
 		{
 			foreach (var session in Sessions)
 			{
